@@ -1,0 +1,6 @@
+Win*/
+*.local
+*.identcache
+*.stat
+*.res
+__*/
