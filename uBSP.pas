@@ -4,40 +4,23 @@ interface
 
 uses
   Types, SysUtils,
-
-  uWorld, uGenerationAlgorithm;
-
+  uBSPRoom, uWorld, uGenerationAlgorithm;
 
 type
-  TBSPRoom = class
-  private
-    Rect: TRect;
-    Visited: Boolean;
-  public
-    Parent: TBSPRoom;
-    Room1: TBSPRoom;
-    Room2: TBSPRoom;
-    constructor Create(Rect: TRect);
-    destructor Destroy(); override;
-    procedure RandomDivide();
-    function GetRects(): TArray<TRect>;
-    function GetNextRoom(): TBSPRoom;
-  end;
-
   TBSP = class(TGenerationAlgorithm)
   private
     Root: TBSPRoom;
     Current: TBSPRoom;
     Generation: Integer;
+    Era: (eraDividing, eraConnecting);
     function GetRectPoints(Rect: TRect): TArray<TPoint>;
+    procedure NextGenerationOfDividing();
+    procedure NextGenerationOfConnecting;
   public
     procedure NextGeneration(); override;
     constructor Create(const World: TWorld); override;
     destructor Destroy(); override;
   end;
-
-const
-  MinRoomSize = 10;
 
 implementation
 
@@ -48,86 +31,6 @@ begin
   Result.Right := Right;
   Result.Bottom := Bottom;
 end;
-
-{ TBSPRoom }
-
-destructor TBSPRoom.Destroy();
-begin
-  FreeAndNil(Room1);
-  FreeAndNil(Room2);
-  inherited;
-end;
-
-function TBSPRoom.GetNextRoom(): TBSPRoom;
-begin
-  if not Visited then
-  begin
-    Visited := True;
-    Exit(Self);
-  end;
-
-  if Assigned(Room1) and not Room1.Visited then
-    Exit(Room1.GetNextRoom());
-
-  if Assigned(Room2) and not Room2.Visited then
-    Exit(Room2.GetNextRoom());
-
-  if Assigned(Parent) then
-    Exit(Parent.GetNextRoom());
-
-  Result := nil;
-end;
-
-function TBSPRoom.GetRects(): TArray<TRect>;
-begin
-  Result := [Rect] + Room1.GetRects() + Room2.GetRects();
-end;
-
-constructor TBSPRoom.Create(Rect: TRect);
-begin
-  Self.Rect := Rect;
-end;
-
-procedure TBSPRoom.RandomDivide();
-var
-  Direction: Integer;
-  Border: Integer;
-  RangeForBorder: Integer;
-  Rect1, Rect2: TRect;
-begin
-  Direction := Random(2);
-
-  if Direction = 1 then
-  begin
-    RangeForBorder := Rect.Width + 1 - MinRoomSize * 2;
-    if RangeForBorder < 0 then
-      Exit();
-
-    Border := Rect.Left + MinRoomSize + Random(RangeForBorder);
-
-    Rect1 := MakeRect(Rect.Left, Rect.Top, Border, Rect.Bottom);
-    Rect2 := MakeRect(Border, Rect.Top, Rect.Right, Rect.Bottom);
-  end
-  else
-  begin
-    RangeForBorder := Rect.Height + 1 - MinRoomSize * 2;
-    if RangeForBorder < 0 then
-      Exit();
-
-    Border := Rect.Top + MinRoomSize + Random(RangeForBorder);
-
-    Rect1 := MakeRect(Rect.Left, Rect.Top, Rect.Right, Border);
-    Rect2 := MakeRect(Rect.Left, Border, Rect.Right, Rect.Bottom);
-  end;
-
-  Room1 := TBSPRoom.Create(Rect1);
-  Room2 := TBSPRoom.Create(Rect2);
-  Room1.Parent := Self;
-  Room2.Parent := Self;
-  Room1.RandomDivide();
-  Room2.RandomDivide();
-end;
-
 { TBSP }
 
 constructor TBSP.Create(const World: TWorld);
@@ -137,6 +40,7 @@ begin
   Root.RandomDivide();
   Current := Root.GetNextRoom();
   Generation := 1;
+  Era := eraDividing;
 end;
 
 destructor TBSP.Destroy();
@@ -183,18 +87,53 @@ begin
 end;
 
 procedure TBSP.NextGeneration();
+begin
+  if Finished then
+    Exit();
+
+  if (Era = eraDividing) then
+    NextGenerationOfDividing()
+  else
+    NextGenerationOfConnecting();
+end;
+
+procedure TBSP.NextGenerationOfDividing();
 var
   Wall: TPoint;
 begin
-  if Current = nil then
+  if (Current = nil) then
     Exit();
 
-  for Wall in GetRectPoints(Current.Rect) do
+  for Wall in GetRectPoints(Current.GetRect()) do
     World[Wall.X, Wall.Y] := 1;
 
   Inc(Generation);
 
   Current := Current.GetNextRoom();
+  if (Current = nil) then
+  begin
+    Current := Root;
+    Root.UnvisitAll();
+    Era := eraConnecting;
+  end;
+end;
+
+procedure TBSP.NextGenerationOfConnecting();
+var
+  P: TPoint;
+begin
+  if (Current = nil) then
+  begin
+    Finish();
+    Exit();
+  end;
+
+  for P in Current.GetPointsOfLineBetweenSubrooms() do
+    if World[P.X, P.Y] = 1 then
+      World[P.X, P.Y] := 0;
+
+  Current := Current.GetNextRoom();
+  Inc(Generation);
 end;
 
 end.

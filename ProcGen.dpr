@@ -6,7 +6,10 @@ uses
   uCellularAutomaton in 'uCellularAutomaton.pas',
   uWorld in 'uWorld.pas',
   uRandomWalk in 'uRandomWalk.pas',
-  uGenerationAlgorithm in 'uGenerationAlgorithm.pas';
+  uGenerationAlgorithm in 'uGenerationAlgorithm.pas',
+  uBSP in 'uBSP.pas',
+  uBSPRoom in 'uBSPRoom.pas',
+  uUtils in 'uUtils.pas';
 
 {$R *.res}
 

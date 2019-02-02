@@ -140,6 +140,9 @@ begin
   Generator.NextGeneration();
 
   Repaint();
+
+  if Generator.Finished then
+    tmrGeneration.Enabled := False;
 end;
 
 procedure TfrMain.FormPaint(Sender: TObject);

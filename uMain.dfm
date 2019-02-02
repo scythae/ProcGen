@@ -32,7 +32,6 @@ object frMain: TfrMain
       Height = 13
       Align = alTop
       Caption = 'GenerationFrequency'
-      ExplicitTop = 108
       ExplicitWidth = 104
     end
     object lMinimumNeighbours: TLabel
@@ -43,7 +42,6 @@ object frMain: TfrMain
       Height = 13
       Align = alTop
       Caption = 'MinimumNeighbours'
-      ExplicitTop = 172
       ExplicitWidth = 94
     end
     object lMaximumNeighbours: TLabel
@@ -54,7 +52,6 @@ object frMain: TfrMain
       Height = 13
       Align = alTop
       Caption = 'MaximumNeighbours'
-      ExplicitTop = 236
       ExplicitWidth = 98
     end
     object lMaximumCells: TLabel
@@ -65,7 +62,6 @@ object frMain: TfrMain
       Height = 13
       Align = alTop
       Caption = 'MaximumCells'
-      ExplicitTop = 300
       ExplicitWidth = 66
     end
     object btnRestart: TButton
@@ -87,12 +83,11 @@ object frMain: TfrMain
       Max = 2000
       Min = 1
       Frequency = 100
-      Position = 500
+      Position = 1
       PositionToolTip = ptBottom
       TabOrder = 1
       TickMarks = tmBoth
       OnChange = OnSettingsChange
-      ExplicitTop = 124
     end
     object tbMinNeighbours: TTrackBar
       Left = 1
@@ -105,7 +100,6 @@ object frMain: TfrMain
       TabOrder = 2
       TickMarks = tmBoth
       OnChange = OnSettingsChange
-      ExplicitTop = 188
     end
     object tbMaxNeighbours: TTrackBar
       Left = 1
@@ -118,7 +112,6 @@ object frMain: TfrMain
       TabOrder = 3
       TickMarks = tmBoth
       OnChange = OnSettingsChange
-      ExplicitTop = 252
     end
     object tbMaximumCells: TTrackBar
       Left = 1
@@ -128,12 +121,11 @@ object frMain: TfrMain
       Align = alTop
       Max = 10000
       Frequency = 500
-      Position = 10000
+      Position = 200
       PositionToolTip = ptBottom
       TabOrder = 4
       TickMarks = tmBoth
       OnChange = OnSettingsChange
-      ExplicitTop = 316
     end
     object rgGenerationType: TRadioGroup
       Left = 1
