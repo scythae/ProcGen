@@ -27,41 +27,45 @@ object frMain: TfrMain
     object lGenerationInterval: TLabel
       AlignWithMargins = True
       Left = 4
-      Top = 124
+      Top = 148
       Width = 206
       Height = 13
       Align = alTop
       Caption = 'GenerationFrequency'
+      ExplicitTop = 124
       ExplicitWidth = 104
     end
     object lMinimumNeighbours: TLabel
       AlignWithMargins = True
       Left = 4
-      Top = 188
+      Top = 212
       Width = 206
       Height = 13
       Align = alTop
       Caption = 'MinimumNeighbours'
+      ExplicitTop = 188
       ExplicitWidth = 94
     end
     object lMaximumNeighbours: TLabel
       AlignWithMargins = True
       Left = 4
-      Top = 252
+      Top = 276
       Width = 206
       Height = 13
       Align = alTop
       Caption = 'MaximumNeighbours'
+      ExplicitTop = 252
       ExplicitWidth = 98
     end
     object lMaximumCells: TLabel
       AlignWithMargins = True
       Left = 4
-      Top = 316
+      Top = 340
       Width = 206
       Height = 13
       Align = alTop
       Caption = 'MaximumCells'
+      ExplicitTop = 316
       ExplicitWidth = 66
     end
     object btnRestart: TButton
@@ -76,7 +80,7 @@ object frMain: TfrMain
     end
     object tbGenerationInterval: TTrackBar
       Left = 1
-      Top = 140
+      Top = 164
       Width = 212
       Height = 45
       Align = alTop
@@ -88,10 +92,11 @@ object frMain: TfrMain
       TabOrder = 1
       TickMarks = tmBoth
       OnChange = OnSettingsChange
+      ExplicitTop = 140
     end
     object tbMinNeighbours: TTrackBar
       Left = 1
-      Top = 204
+      Top = 228
       Width = 212
       Height = 45
       Align = alTop
@@ -100,10 +105,11 @@ object frMain: TfrMain
       TabOrder = 2
       TickMarks = tmBoth
       OnChange = OnSettingsChange
+      ExplicitTop = 204
     end
     object tbMaxNeighbours: TTrackBar
       Left = 1
-      Top = 268
+      Top = 292
       Width = 212
       Height = 45
       Align = alTop
@@ -112,10 +118,11 @@ object frMain: TfrMain
       TabOrder = 3
       TickMarks = tmBoth
       OnChange = OnSettingsChange
+      ExplicitTop = 268
     end
     object tbMaximumCells: TTrackBar
       Left = 1
-      Top = 332
+      Top = 356
       Width = 212
       Height = 45
       Align = alTop
@@ -126,19 +133,21 @@ object frMain: TfrMain
       TabOrder = 4
       TickMarks = tmBoth
       OnChange = OnSettingsChange
+      ExplicitTop = 332
     end
     object rgGenerationType: TRadioGroup
       Left = 1
       Top = 26
       Width = 212
-      Height = 95
+      Height = 119
       Align = alTop
       Caption = 'Generation Type'
-      ItemIndex = 2
+      ItemIndex = 3
       Items.Strings = (
         'Cellular Automaton'
         'Random Walk'
-        'Binary Space Partioning')
+        'Binary Space Partioning'
+        'BSP + Random Walk')
       TabOrder = 5
       OnClick = rgGenerationTypeClick
     end

@@ -9,10 +9,17 @@ uses
 
 type
   TWalker = record
-  private
+  strict private const
+    MaxFatique = 100;
+  strict private
+    Fatique: Integer;
     VisitedCells: Cardinal;
+  private
     MaxCellCount: Cardinal;
     function GetFinished(): Boolean;
+    procedure IncreaseFatique();
+    procedure ResetFatique();
+    procedure NewCellVisited();
   public
     Point: TPoint;
     Id: Integer;
@@ -26,6 +33,7 @@ type
     procedure MoveWalker(var Walker: TWalker);
     procedure NextGenerationInternal();
     procedure SetDefaultWalkers;
+    procedure ShowWalkers;
   public
     procedure NextGeneration(); override;
     procedure SetSettings(Settings: TGenerationSettings); override;
@@ -74,7 +82,7 @@ var
   P: TPoint;
   Cell: TCell;
 begin
-  if Walker.VisitedCells >= Walker.MaxCellCount then
+  if Walker.GetFinished() then
     Exit();
 
   P := Walker.Point;
@@ -90,13 +98,20 @@ begin
   World.RefineCoords(P.X, P.Y);
 
   Cell := World[P.X, P.Y];
-  if (Cell <> 0) and (Cell <> Walker.Id) then
+
+  if (Cell = 0) or (Cell = Walker.Id) then
+    Walker.Point := P
+  else
     Exit();
 
-  World[P.X, P.Y] := Walker.Id;
+  if Cell = Walker.Id then
+  begin
+    Walker.IncreaseFatique();
+    Exit();
+  end;
 
-  Walker.Point := P;
-  Inc(Walker.VisitedCells);
+  Walker.NewCellVisited();
+  World[P.X, P.Y] := Walker.Id;
 end;
 
 procedure TRandomWalk.SetSettings(Settings: TGenerationSettings);
@@ -116,9 +131,25 @@ begin
 
   GenerationsMultiplier := 10;
 
-  SetDefaultWalkers();
+  if Walkers = nil then
+    SetDefaultWalkers()
+  else
+    Self.Walkers := Walkers;
+
+  ShowWalkers();
 
   NextGeneration();
+end;
+
+procedure TRandomWalk.ShowWalkers();
+var
+  Walker: TWalker;
+begin
+  for Walker in Walkers do
+  begin
+    World[Walker.Point.X, Walker.Point.Y] := Walker.Id;
+    Walker.NewCellVisited();
+  end;
 end;
 
 procedure TRandomWalk.SetDefaultWalkers();
@@ -133,7 +164,7 @@ begin
 
   for I := 0 to Length(Walkers) - 1 do
   begin
-    Walkers[I] := TWalker.Create(StartPoint, 1, High(Cardinal));
+    Walkers[I] := TWalker.Create(StartPoint, I, High(Cardinal));
   end;
 end;
 
@@ -146,11 +177,28 @@ begin
   Result.Id := Id;
   Result.MaxCellCount := MaxCellCount;
   Result.VisitedCells := 0;
+  Result.Fatique := 0;
 end;
 
 function TWalker.GetFinished(): Boolean;
 begin
-  Result := VisitedCells >= MaxCellCount;
+  Result := (VisitedCells >= MaxCellCount) or (Fatique >= MaxFatique);
+end;
+
+procedure TWalker.IncreaseFatique();
+begin
+  Inc(Fatique);
+end;
+
+procedure TWalker.ResetFatique();
+begin
+  Fatique := 0;
+end;
+
+procedure TWalker.NewCellVisited();
+begin
+  ResetFatique();
+  Inc(VisitedCells);
 end;
 
 end.

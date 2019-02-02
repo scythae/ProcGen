@@ -11,7 +11,8 @@ uses
   uGenerationAlgorithm,
   uCellularAutomaton,
   uRandomWalk,
-  uBSP;
+  uBSP,
+  uBSPRandomWalk;
 
 type
   TSettings = record
@@ -98,6 +99,12 @@ begin
     Generator := TBSP.Create(World);
   end;
 
+  if rgGenerationType.ItemIndex = 3 then
+  begin
+    World := TWorld.GetEmptyWorld(WorldWidth, WorldWidth);
+    Generator := TBSPRandomWalk.Create(World);
+  end;
+
   ReloadSettings();
 
   tmrGeneration.Enabled := True;
@@ -164,7 +171,7 @@ const
   CellSide = 10;
 var
   Rect: TRect;
-  R, G, B: Integer;
+//  R, G, B: Integer;
 begin
   Rect.Left := X * CellSide;
   Rect.Top := Y * CellSide;
@@ -172,18 +179,19 @@ begin
   Rect.Height := CellSide;
 
   Canvas.Rectangle(Rect);
+//
+//  R := Random(55) + 200;
+//  G := Random(55) + 200;
+//  B := Random(55) + 200;
 
-  R := Random(55) + 200;
-  G := Random(55) + 200;
-  B := Random(55) + 200;
-
+//
   case CellTypeId of
-    0: Canvas.Brush.Color := clBlack;
-    1: Canvas.Brush.Color := clBlue;
-    2: Canvas.Brush.Color := clGreen;
-    3: Canvas.Brush.Color := clRed;
+    0: Canvas.Brush.Color := clGray;
+//    1: Canvas.Brush.Color := clBlue;
+//    2: Canvas.Brush.Color := clGreen;
+//    3: Canvas.Brush.Color := clRed;
     else
-      Canvas.Brush.Color := clGray;
+      Canvas.Brush.Color := clBlack;
   end;
 
   Canvas.FillRect(Rect);

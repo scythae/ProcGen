@@ -24,6 +24,9 @@ type
     function GetNextRoom(): TBSPRoom;
     procedure UnvisitAll;
     function GetPointsOfLineBetweenSubrooms(): TArray<TPoint>;
+    function GetCentersOfLeafRooms(): TArray<TPoint>;
+    function GetLeafRooms(): TArray<TBSPRoom>;
+    function IsLeafRoom(): Boolean;
   end;
 
 implementation
@@ -37,6 +40,28 @@ begin
   FreeAndNil(Room1);
   FreeAndNil(Room2);
   inherited;
+end;
+
+function TBSPRoom.GetCentersOfLeafRooms(): TArray<TPoint>;
+begin
+  if IsLeafRoom() then
+    Result := [Self.Rect.CenterPoint]
+  else
+    Result := Room1.GetCentersOfLeafRooms() + Room2.GetCentersOfLeafRooms();
+end;
+
+function TBSPRoom.GetLeafRooms(): TArray<TBSPRoom>;
+begin
+  if IsLeafRoom() then
+    Result := [Self]
+  else
+    Result := Room1.GetLeafRooms() + Room2.GetLeafRooms();
+end;
+
+
+function TBSPRoom.IsLeafRoom(): Boolean;
+begin
+  Result := (Room1 = nil) or (Room2 = nil);
 end;
 
 function TBSPRoom.GetNextRoom(): TBSPRoom;

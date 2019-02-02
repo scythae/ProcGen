@@ -9,7 +9,8 @@ uses
   uGenerationAlgorithm in 'uGenerationAlgorithm.pas',
   uBSP in 'uBSP.pas',
   uBSPRoom in 'uBSPRoom.pas',
-  uUtils in 'uUtils.pas';
+  uUtils in 'uUtils.pas',
+  uBSPRandomWalk in 'uBSPRandomWalk.pas';
 
 {$R *.res}
 
