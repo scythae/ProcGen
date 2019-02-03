@@ -5,11 +5,20 @@ interface
 uses
   Types;
 
+const
+  cellEmpty = 0;
+  cellRock = 1;
+  cellGrass = 2;
+  cellWater = 3;
+  cellLava = 4;
+
 type
   TCell = Integer;
   PCell = ^TCell;
 
   TWorld = class
+  private type
+    TForEachCellProc = reference to procedure(Cell: PCell);
   private
     Storage: TArray<TArray<TCell>>;
     FWidth: Integer;
@@ -18,6 +27,7 @@ type
     procedure SetCell(X, Y: Integer; const Value: TCell);
     function GetCellPointer(X, Y: Integer): PCell;
     procedure SetCellPointer(X, Y: Integer; const Value: PCell);
+    procedure ForEachCell(Proc: TForEachCellProc);
   public
     IgnoreBounds: Boolean;
     property Cell[X, Y: Integer]: TCell read GetCell write SetCell; default;
@@ -26,8 +36,11 @@ type
     property Height: Integer read FHeight;
     procedure RefineCoords(var X, Y: Integer);
     constructor Create(Width, Height: Integer);
-    class function GetRandomWorld(Width, Height: Integer): TWorld;
-    class function GetEmptyWorld(Width, Height: Integer): TWorld;
+    class function GetRandomFilledWorld(Width, Height: Integer; FillValue: Integer): TWorld;
+    class function GetWorldOfValue(Width, Height: Integer; FillValue: Integer): TWorld;
+    procedure FillWith(FillValue: Integer);
+    procedure ReplaceAllCellsExceptWith(CellToRemain, CellToReplaceWith: Integer);
+    procedure ReplaceCells(CellFrom, CellToReplaceWith: Integer);
   end;
 
 implementation
@@ -92,27 +105,55 @@ begin
   end;
 end;
 
-class function TWorld.GetEmptyWorld(Width, Height: Integer): TWorld;
-var
-  X, Y: Integer;
+class function TWorld.GetWorldOfValue(Width, Height: Integer; FillValue: Integer): TWorld;
+begin
+  Result := TWorld.Create(Width, Height);
+  Result.FillWith(FillValue);
+end;
+
+procedure TWorld.FillWith(FillValue: Integer);
+begin
+  ForEachCell(procedure (Cell: PCell) begin
+    Cell^ := FillValue;
+  end);
+end;
+
+class function TWorld.GetRandomFilledWorld(Width, Height: Integer; FillValue: Integer): TWorld;
 begin
   Result := TWorld.Create(Width, Height);
 
-  for Y := 0 to Height - 1 do
-    for X := 0 to Width - 1 do
-        Result[X, Y] := 0;
+  Result.ForEachCell(procedure (Cell: PCell) begin
+    if Random() < 0.05 then
+      Cell^ := FillValue
+    else
+      Cell^ := cellEmpty;
+  end);
 end;
 
-class function TWorld.GetRandomWorld(Width, Height: Integer): TWorld;
+procedure TWorld.ReplaceCells(CellFrom, CellToReplaceWith: Integer);
+begin
+  ForEachCell(procedure (Cell: PCell) begin
+    if Cell^ = CellFrom then
+      Cell^ := CellToReplaceWith;
+  end);
+end;
+
+procedure TWorld.ReplaceAllCellsExceptWith(CellToRemain, CellToReplaceWith: Integer);
+begin
+  ForEachCell(procedure (Cell: PCell) begin
+    if Cell^ <> CellToRemain then
+      Cell^ := CellToReplaceWith;
+  end);
+end;
+
+procedure TWorld.ForEachCell(Proc: TForEachCellProc);
 var
   X, Y: Integer;
 begin
-  Result := TWorld.Create(Width, Height);
+  if not Assigned(Proc) then
+    Exit();
 
   for Y := 0 to Height - 1 do
     for X := 0 to Width - 1 do
-      if Random() < 0.1 then
-        Result[X, Y] := 1;
-end;
-
-end.
+      Proc(CellPointer[X, Y]);
+end;end.

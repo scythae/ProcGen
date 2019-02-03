@@ -29,20 +29,24 @@ type
   TRandomWalk = class(TGenerationAlgorithm)
   private
     Walkers: TArray<TWalker>;
-    GenerationsMultiplier: Integer;
+    GenerationMultiplier: Integer;
+    FirstGeneration: Boolean;
     procedure MoveWalker(var Walker: TWalker);
     procedure NextGenerationInternal();
     procedure SetDefaultWalkers;
-    procedure ShowWalkers;
+    procedure InitWalkerPlace(var Walker: TWalker);
+    procedure UniteRooms;
   public
     procedure NextGeneration(); override;
     procedure SetSettings(Settings: TGenerationSettings); override;
-    constructor Create(const World: TWorld; Walkers: TArray<TWalker> = nil); reintroduce;
+    procedure SetWalkers(Walkers: TArray<TWalker>);
+    constructor Create(const World: TWorld); override;
   end;
 
   TrwSettings = class(TGenerationSettings)
   public
     MaximumCells: Cardinal;
+    GenerationMultiplier: Integer;
   end;
 
 implementation
@@ -53,7 +57,7 @@ procedure TRandomWalk.NextGeneration();
 var
   I: Integer;
 begin
-  for I := 0 to GenerationsMultiplier do
+  for I := 0 to GenerationMultiplier do
     NextGenerationInternal();
 end;
 
@@ -68,12 +72,26 @@ begin
   AllWalkersFinished := True;
   for I := 0 to Length(Walkers) - 1 do
   begin
-    MoveWalker(Walkers[I]);
+    if FirstGeneration then
+      InitWalkerPlace(Walkers[I])
+    else
+      MoveWalker(Walkers[I]);
     AllWalkersFinished := AllWalkersFinished and Walkers[I].GetFinished();
   end;
 
+  FirstGeneration := False;
+
   if AllWalkersFinished then
+  begin
     Finish();
+    UniteRooms();
+  end;
+end;
+
+procedure TRandomWalk.InitWalkerPlace(var Walker: TWalker);
+begin
+  World[Walker.Point.X, Walker.Point.Y] := Walker.Id;
+  Walker.NewCellVisited();
 end;
 
 procedure TRandomWalk.MoveWalker(var Walker: TWalker);
@@ -99,19 +117,29 @@ begin
 
   Cell := World[P.X, P.Y];
 
-  if (Cell = 0) or (Cell = Walker.Id) then
+  if (Cell = cellRock) then
     Walker.Point := P
   else
-    Exit();
-
-  if Cell = Walker.Id then
   begin
+    if (Cell = Walker.Id) then
+      Walker.Point := P;
+
     Walker.IncreaseFatique();
     Exit();
   end;
 
   Walker.NewCellVisited();
   World[P.X, P.Y] := Walker.Id;
+end;
+
+procedure TRandomWalk.UniteRooms();
+var
+  X, Y: Integer;
+begin
+  for Y := 0 to Height - 1 do
+    for X := 0 to Width - 1 do
+      if World[X, Y] <> cellRock then
+        World[X, Y] := cellEmpty;
 end;
 
 procedure TRandomWalk.SetSettings(Settings: TGenerationSettings);
@@ -123,33 +151,22 @@ begin
 
   for I := 0 to High(Walkers) do
     Walkers[I].MaxCellCount := TrwSettings(Settings).MaximumCells;
+
+  GenerationMultiplier := TrwSettings(Settings).GenerationMultiplier;
 end;
 
-constructor TRandomWalk.Create(const World: TWorld; Walkers: TArray<TWalker> = nil);
+procedure TRandomWalk.SetWalkers(Walkers: TArray<TWalker>);
+begin
+  Self.Walkers := Walkers;
+end;
+
+constructor TRandomWalk.Create(const World: TWorld);
 begin
   inherited Create(World);
 
-  GenerationsMultiplier := 10;
-
-  if Walkers = nil then
-    SetDefaultWalkers()
-  else
-    Self.Walkers := Walkers;
-
-  ShowWalkers();
-
-  NextGeneration();
-end;
-
-procedure TRandomWalk.ShowWalkers();
-var
-  Walker: TWalker;
-begin
-  for Walker in Walkers do
-  begin
-    World[Walker.Point.X, Walker.Point.Y] := Walker.Id;
-    Walker.NewCellVisited();
-  end;
+  GenerationMultiplier := 1;
+  FirstGeneration := True;
+  SetDefaultWalkers();
 end;
 
 procedure TRandomWalk.SetDefaultWalkers();
@@ -163,9 +180,7 @@ begin
   StartPoint.Y := Height div 4 + Random(Height div 2);
 
   for I := 0 to Length(Walkers) - 1 do
-  begin
-    Walkers[I] := TWalker.Create(StartPoint, I, High(Cardinal));
-  end;
+    Walkers[I] := TWalker.Create(StartPoint, cellGrass + I, High(Cardinal));
 end;
 
 { TWalker }

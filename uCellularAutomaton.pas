@@ -26,6 +26,9 @@ type
 
 implementation
 
+const
+  cellLife = cellWater;
+
 { TCellularAutomation }
 
 procedure TCellularAutomaton.NextGeneration();
@@ -36,12 +39,12 @@ begin
     for X := 0 to Width - 1 do
     begin
       NeighboursCount := getNeighboursCount(X, Y);
-      if (World[X, Y] = 0) and (NeighboursCount = 3) then
-        tmpWorld[X, Y] := 1
+      if (World[X, Y] = cellEmpty) and (NeighboursCount = 3) then
+        tmpWorld[X, Y] := cellLife
       else if (NeighboursCount > MinNeighbours) and (NeighboursCount < MaxNeighbours) then
-        tmpWorld[X, Y] := 1
+        tmpWorld[X, Y] := cellLife
       else
-        tmpWorld[X, Y] := 0;
+        tmpWorld[X, Y] := cellEmpty;
     end;
 
   for Y := 0 to Height - 1 do
@@ -53,7 +56,7 @@ constructor TCellularAutomaton.Create(const World: TWorld);
 begin
   inherited;
 
-  tmpWorld := World.GetEmptyWorld(Width, Height);
+  tmpWorld := TWorld.GetWorldOfValue(Width, Height, cellEmpty);
 end;
 
 function TCellularAutomaton.getNeighboursCount(X, Y: Integer): Integer;
@@ -79,7 +82,7 @@ begin
         tmpY2 := tmpY;
 
 
-      if World[tmpX2, tmpY2] = 1 then
+      if World[tmpX2, tmpY2] = cellLife then
         Inc(Result);
     end;
 end;

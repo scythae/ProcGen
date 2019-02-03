@@ -4,22 +4,24 @@ interface
 
 uses
   Types, SysUtils,
-  uBSPRoom, uWorld, uGenerationAlgorithm, uRandomWalk, uUtils;
+  uBSPRoom, uWorld, uGenerationAlgorithm, uBSP, uRandomWalk, uUtils;
 
 type
   TBSPRandomWalk = class(TGenerationAlgorithm)
   private
-    RandomWalk: TGenerationAlgorithm;
+    BSP: TBSP;
+    RandomWalk: TRandomWalk;
     Root: TBSPRoom;
     Current: TBSPRoom;
-    Generation: Integer;
-    Era: (eraWalking, eraConnecting);
+    Era: (eraDividing, eraWalking, eraConnecting);
+    procedure InitRandomWalk();
+    procedure NextGenerationOfDividing();
     procedure NextGenerationOfConnecting();
     procedure NextGenerationOfWalking();
-    procedure InitRandomWalk;
-    procedure PrintRooms;
+    procedure UniteRoomsAndPassages();
   public
     procedure NextGeneration(); override;
+    procedure SetSettings(Settings: TGenerationSettings); override;
     constructor Create(const World: TWorld); override;
     destructor Destroy(); override;
   end;
@@ -29,16 +31,65 @@ implementation
 constructor TBSPRandomWalk.Create(const World: TWorld);
 begin
   inherited;
-  Root := TBSPRoom.Create(Rect(0, 0, World.Width - 1, World.Height - 1));
-  Root.RandomDivide();
-  Current := Root;
-  Generation := 1;
-  Era := eraWalking;
-//  Era := eraConnecting;
 
-//  PrintRooms();
+  BSP := TBSP.Create(World);
+  RandomWalk := TRandomWalk.Create(World);
 
-  InitRandomWalk();
+  World.FillWith(cellEmpty);
+  Era := eraDividing;
+end;
+
+destructor TBSPRandomWalk.Destroy();
+begin
+  FreeAndNil(BSP);
+  FreeAndNil(RandomWalk);
+  inherited;
+end;
+
+procedure TBSPRandomWalk.SetSettings(Settings: TGenerationSettings);
+begin
+  if (BSP <> nil) then
+    BSP.SetSettings(Settings);
+
+  if (RandomWalk <> nil) then
+    RandomWalk.SetSettings(Settings);
+end;
+
+procedure TBSPRandomWalk.NextGeneration();
+begin
+  if Finished then
+    Exit();
+
+  if (Era = eraDividing) then
+    NextGenerationOfDividing()
+  else if (Era = eraWalking) then
+    NextGenerationOfWalking()
+  else
+    NextGenerationOfConnecting();
+end;
+
+procedure TBSPRandomWalk.NextGenerationOfDividing();
+begin
+  if BSP.Finished then
+  begin
+    Root := BSP.GetRoot();
+    Root.UnvisitAll();
+    Current := Root;
+
+    Sleep(500);
+
+    World.FillWith(cellRock);
+    InitRandomWalk();
+    Era := eraWalking;
+    Exit();
+  end;
+
+  BSP.NextGeneration();
+
+  if BSP.Finished then
+  begin
+    World.ReplaceCells(cellRock, cellEmpty);
+  end;
 end;
 
 procedure TBSPRandomWalk.InitRandomWalk();
@@ -49,11 +100,12 @@ var
   WalkerMaximumCells: Integer;
   WalkerId: Integer;
 begin
-  WalkerId := 1;
+  WalkerId := cellGrass;
+
   for Room in Root.GetLeafRooms() do
   begin
     Rect := Room.GetRect();
-    WalkerMaximumCells := Rect.Width * Rect.Height div 3;
+    WalkerMaximumCells := Rect.Width * Rect.Height div 2;
 
     Walkers := Walkers + [TWalker.Create(
       Rect.CenterPoint, WalkerId, WalkerMaximumCells
@@ -62,42 +114,12 @@ begin
     Inc(WalkerId);
   end;
 
-  RandomWalk := TRandomWalk.Create(World, Walkers);
-end;
-
-
-procedure TBSPRandomWalk.PrintRooms();
-var
-  Room: TBSPRoom;
-  Wall: TPoint;
-begin
-  for Room in Root.GetLeafRooms() do
-    for Wall in GetPerimeterPoints(Room.GetRect()) do
-      World[Wall.X, Wall.Y] := 3000;
-end;
-
-destructor TBSPRandomWalk.Destroy();
-begin
-  FreeAndNil(RandomWalk);
-  FreeAndNil(Root);
-  inherited;
-end;
-
-procedure TBSPRandomWalk.NextGeneration();
-begin
-  if Finished then
-    Exit();
-
-  if (Era = eraWalking) then
-    NextGenerationOfWalking()
-  else
-    NextGenerationOfConnecting();
+  RandomWalk.SetWalkers(Walkers);
 end;
 
 procedure TBSPRandomWalk.NextGenerationOfWalking();
 begin
   RandomWalk.NextGeneration();
-  Inc(Generation);
 
   if RandomWalk.Finished then
   begin
@@ -113,6 +135,8 @@ var
 begin
   if (Current = nil) then
   begin
+    UniteRoomsAndPassages();
+    BSP.ColonizeRoomCentersWithCell(cellGrass);
     Finish();
     Exit();
   end;
@@ -120,11 +144,15 @@ begin
   if (Current.Room1 <> nil) and (Current.Room2 <> nil) then
   begin
     for P in GetRandomWayFromTo(Current.Room1.GetRect().CenterPoint, Current.Room2.GetRect().CenterPoint) do
-      World[P.X, P.Y] := 10;
+      World[P.X, P.Y] := cellGrass;
   end;
 
   Current := Current.GetNextRoom();
-  Inc(Generation);
+end;
+
+procedure TBSPRandomWalk.UniteRoomsAndPassages();
+begin
+  World.ReplaceAllCellsExceptWith(cellRock, cellEmpty);
 end;
 
 end.

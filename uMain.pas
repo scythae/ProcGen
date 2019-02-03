@@ -26,15 +26,21 @@ type
     tmrGeneration: TTimer;
     pSettings: TPanel;
     btnRestart: TButton;
-    tbGenerationInterval: TTrackBar;
-    lGenerationInterval: TLabel;
+    rgGenerationType: TRadioGroup;
+    pCASettings: TPanel;
     lMinimumNeighbours: TLabel;
     tbMinNeighbours: TTrackBar;
     lMaximumNeighbours: TLabel;
     tbMaxNeighbours: TTrackBar;
+    pRWSettings: TPanel;
+    lRWMaximumCells: TLabel;
     tbMaximumCells: TTrackBar;
-    rgGenerationType: TRadioGroup;
-    lMaximumCells: TLabel;
+    pGenerationMultiplier: TPanel;
+    lGenerationMultiplier: TLabel;
+    tbGenerationMultiplier: TTrackBar;
+    pGenerationsInterval: TPanel;
+    lGenerationInterval: TLabel;
+    tbGenerationInterval: TTrackBar;
     procedure FormCreate(Sender: TObject);
     procedure FormPaint(Sender: TObject);
     procedure tmrGenerationTimer(Sender: TObject);
@@ -48,9 +54,9 @@ type
     WorldHeight: Integer;
     procedure PrintWorld;
     procedure DrawCell(X, Y, CellTypeId: Integer);
-    procedure Restart;
-    procedure ReloadSettings();
-    procedure TestSomething;
+    procedure Restart();
+    procedure ReloadGeneratorSettings();
+    procedure MakeRandomWayFromTo(pFrom, pTo: TPoint);
   public
     { Public declarations }
   end;
@@ -73,14 +79,12 @@ begin
   Restart();
 end;
 
-procedure TfrMain.TestSomething();
+procedure TfrMain.MakeRandomWayFromTo(pFrom, pTo: TPoint);
 var
   P: TPoint;
 begin
-  World := TWorld.GetEmptyWorld(WorldWidth, WorldHeight);
-
   for P in GetRandomWayFromTo(Point(20, 20), Point(60, 60)) do
-    World[P.X, P.Y] := 1;
+    World[P.X, P.Y] := cellEmpty;
 
   Repaint();
 end;
@@ -93,70 +97,93 @@ begin
   WorldHeight := 100;
 
   FreeAndNil(Generator);
-
-//  TestSomething();
-//  Exit();
+  FreeAndNil(World);
 
   if rgGenerationType.ItemIndex = 0 then
   begin
-    World := TWorld.GetRandomWorld(WorldWidth, WorldHeight);
+    World := TWorld.GetRandomFilledWorld(WorldWidth, WorldHeight, cellWater);
     World.IgnoreBounds := True;
     Generator := TCellularAutomaton.Create(World);
   end;
 
   if rgGenerationType.ItemIndex = 1 then
   begin
-    World := TWorld.GetEmptyWorld(WorldWidth, WorldHeight);
+    World := TWorld.GetWorldOfValue(WorldWidth, WorldHeight, cellRock);
     Generator := TRandomWalk.Create(World);
   end;
 
   if rgGenerationType.ItemIndex = 2 then
   begin
-    World := TWorld.GetEmptyWorld(WorldWidth, WorldWidth);
+    World := TWorld.GetWorldOfValue(WorldWidth, WorldHeight, cellEmpty);
     Generator := TBSP.Create(World);
   end;
 
   if rgGenerationType.ItemIndex = 3 then
   begin
-    World := TWorld.GetEmptyWorld(WorldWidth, WorldWidth);
+    World := TWorld.GetWorldOfValue(WorldWidth, WorldHeight, cellRock);
     Generator := TBSPRandomWalk.Create(World);
   end;
 
-  ReloadSettings();
+  if rgGenerationType.ItemIndex = 4 then
+  begin
+    World := TWorld.GetWorldOfValue(WorldWidth, WorldHeight, cellRock);
+    MakeRandomWayFromTo(Point(20, 20), Point(60, 60));
+    Exit();
+  end;
+
+  ReloadGeneratorSettings();
 
   tmrGeneration.Enabled := True;
 end;
 
 procedure TfrMain.rgGenerationTypeClick(Sender: TObject);
 begin
-  tbMinNeighbours.Enabled := rgGenerationType.ItemIndex = 0;
-  tbMaxNeighbours.Enabled := rgGenerationType.ItemIndex = 0;
-  tbMaximumCells.Enabled := rgGenerationType.ItemIndex = 1;
+  pCASettings.Visible := rgGenerationType.ItemIndex = 0;
+  pRWSettings.Visible := rgGenerationType.ItemIndex in [1, 3];
+  pGenerationMultiplier.Visible := rgGenerationType.ItemIndex in [1, 3];
+  pGenerationsInterval.Visible := rgGenerationType.ItemIndex <> 4;
+
+  if rgGenerationType.ItemIndex = 0 then
+    tbGenerationInterval.Position := 300
+  else
+    tbGenerationInterval.Position := 1;
+
+  if rgGenerationType.ItemIndex = 3 then
+    tbGenerationMultiplier.Position := 5
+  else
+    tbGenerationMultiplier.Position := 10;
 
   Restart();
 end;
 
-procedure TfrMain.ReloadSettings();
+procedure TfrMain.ReloadGeneratorSettings();
 var
   caSettings: TcaSettings;
   rwSettings: TrwSettings;
 begin
+  if Generator = nil then
+    Exit();
+
   caSettings := TcaSettings.Create();
   caSettings.MinNeighbours := tbMinNeighbours.Position;
   caSettings.MaxNeighbours := tbMaxNeighbours.Position;
 
   rwSettings := TrwSettings.Create();
   rwSettings.MaximumCells := tbMaximumCells.Position;
+  rwSettings.GenerationMultiplier := tbGenerationMultiplier.Position;
 
   Generator.SetSettings(caSettings);
   Generator.SetSettings(rwSettings);
+
+  FreeAndNil(caSettings);
+  FreeAndNil(rwSettings);
 
   tmrGeneration.Interval := tbGenerationInterval.Position;
 end;
 
 procedure TfrMain.OnSettingsChange(Sender: TObject);
 begin
-  ReloadSettings();
+  ReloadGeneratorSettings();
 end;
 
 procedure TfrMain.tmrGenerationTimer(Sender: TObject);
@@ -188,7 +215,7 @@ const
   CellSide = 10;
 var
   Rect: TRect;
-//  R, G, B: Integer;
+  C: TColor;
 begin
   Rect.Left := X * CellSide;
   Rect.Top := Y * CellSide;
@@ -196,21 +223,18 @@ begin
   Rect.Height := CellSide;
 
   Canvas.Rectangle(Rect);
-//
-//  R := Random(55) + 200;
-//  G := Random(55) + 200;
-//  B := Random(55) + 200;
 
-//
   case CellTypeId of
-    0: Canvas.Brush.Color := clGray;
-//    1: Canvas.Brush.Color := clBlue;
-//    2: Canvas.Brush.Color := clGreen;
-//    3: Canvas.Brush.Color := clRed;
+    cellEmpty: C := clBlack;
+    cellRock: C := clGray;
+    cellGrass: C := clGreen;
+    cellWater: C := clBlue;
+    cellLava: C := clRed;
     else
-      Canvas.Brush.Color := clBlack;
+      C := clOlive;
   end;
 
+  Canvas.Brush.Color := C;
   Canvas.FillRect(Rect);
 end;
 
