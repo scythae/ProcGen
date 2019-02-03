@@ -31,9 +31,10 @@ begin
   inherited;
   Root := TBSPRoom.Create(Rect(0, 0, World.Width - 1, World.Height - 1));
   Root.RandomDivide();
-
+  Current := Root;
   Generation := 1;
   Era := eraWalking;
+//  Era := eraConnecting;
 
 //  PrintRooms();
 
@@ -52,7 +53,7 @@ begin
   for Room in Root.GetLeafRooms() do
   begin
     Rect := Room.GetRect();
-    WalkerMaximumCells := Rect.Width * Rect.Height div 2;
+    WalkerMaximumCells := Rect.Width * Rect.Height div 3;
 
     Walkers := Walkers + [TWalker.Create(
       Rect.CenterPoint, WalkerId, WalkerMaximumCells
@@ -116,8 +117,11 @@ begin
     Exit();
   end;
 
-  for P in Current.GetPointsOfLineBetweenSubrooms() do
-    World[P.X, P.Y] := 10;
+  if (Current.Room1 <> nil) and (Current.Room2 <> nil) then
+  begin
+    for P in GetRandomWayFromTo(Current.Room1.GetRect().CenterPoint, Current.Room2.GetRect().CenterPoint) do
+      World[P.X, P.Y] := 10;
+  end;
 
   Current := Current.GetNextRoom();
   Inc(Generation);

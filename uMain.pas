@@ -8,6 +8,7 @@ uses
   Vcl.ComCtrls,
 
   uWorld,
+  uUtils,
   uGenerationAlgorithm,
   uCellularAutomaton,
   uRandomWalk,
@@ -49,6 +50,7 @@ type
     procedure DrawCell(X, Y, CellTypeId: Integer);
     procedure Restart;
     procedure ReloadSettings();
+    procedure TestSomething;
   public
     { Public declarations }
   end;
@@ -71,6 +73,18 @@ begin
   Restart();
 end;
 
+procedure TfrMain.TestSomething();
+var
+  P: TPoint;
+begin
+  World := TWorld.GetEmptyWorld(WorldWidth, WorldHeight);
+
+  for P in GetRandomWayFromTo(Point(20, 20), Point(60, 60)) do
+    World[P.X, P.Y] := 1;
+
+  Repaint();
+end;
+
 procedure TfrMain.Restart();
 begin
   tmrGeneration.Enabled := False;
@@ -79,6 +93,9 @@ begin
   WorldHeight := 100;
 
   FreeAndNil(Generator);
+
+//  TestSomething();
+//  Exit();
 
   if rgGenerationType.ItemIndex = 0 then
   begin

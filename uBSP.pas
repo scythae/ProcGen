@@ -81,9 +81,12 @@ begin
     Exit();
   end;
 
-  for P in Current.GetPointsOfLineBetweenSubrooms() do
-    if World[P.X, P.Y] = 1 then
-      World[P.X, P.Y] := 0;
+  if (Current.Room1 <> nil) or (Current.Room2 <> nil) then
+  begin
+    for P in GetLinePoints(Current.Room1.GetRect().CenterPoint, Current.Room2.GetRect().CenterPoint) do
+      if World[P.X, P.Y] = 1 then
+        World[P.X, P.Y] := 0;
+  end;
 
   Current := Current.GetNextRoom();
   Inc(Generation);

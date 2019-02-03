@@ -3,10 +3,14 @@ unit uUtils;
 interface
 
 uses
-  Types;
+  Types, Math;
+
+type
+  TGetWayFunc = reference to function(pFrom, pTo: TPoint): TArray<TPoint>;
 
 function GetLinePoints(pFrom, pTo: TPoint): TArray<TPoint>;
 function GetPerimeterPoints(Rect: TRect): TArray<TPoint>;
+function GetRandomWayFromTo(pFrom, pTo: TPoint): TArray<TPoint>;
 
 implementation
 
@@ -114,6 +118,72 @@ begin
   X := 0;
   for Y := Height - 2 downto 1 do
     AddPoint();
+end;
+
+function GetRandomWayFromTo(pFrom, pTo: TPoint): TArray<TPoint>;
+type
+  TDirection = (dUp, dDown, dLeft, dRight);
+var
+  AnyAnotherDirectionPool: array [0..2] of TDirection;
+
+  function GetDirectionFromTo(const pFrom, pTo: TPoint): TDirection;
+  begin
+    if (pFrom.X = pTo.X) or (Random() < 0.5) then
+      if pFrom.Y > pTo.Y then
+        Exit(dUp)
+      else
+        Exit(dDown)
+    else
+      if pFrom.X > pTo.X then
+        Exit(dLeft)
+      else
+        Exit(dRight);
+  end;
+
+  procedure MoveTo(var P: TPoint; Direction: TDirection);
+  begin
+    case Direction of
+      dUp: Dec(P.Y);
+      dDown: Inc(P.Y);
+      dLeft: Dec(P.X);
+      dRight: Inc(P.X);
+    end;
+  end;
+
+  function AnyDirectionBut(Direction: TDirection): TDirection;
+  var
+    I, J: Integer;
+  begin
+    J := 0;
+    for I := 0 to Integer(High(TDirection)) do
+    begin
+      if TDirection(I) = Direction then
+        Continue;
+      AnyAnotherDirectionPool[J] := TDirection(I);
+      Inc(J);
+    end;
+
+    Result := AnyAnotherDirectionPool[Random(J)];
+  end;
+var
+  P: TPoint;
+  Direction: TDirection;
+begin
+  Randomize();
+  P := pFrom;
+
+  Result := [P];
+
+  while P <> pTo do
+  begin
+    Direction := GetDirectionFromTo(P, pTo);
+    if Random() < 0.7 then
+      MoveTo(P, Direction)
+    else
+      MoveTo(P, AnyDirectionBut(Direction));
+
+    Result := Result + [P];
+  end;
 end;
 
 end.

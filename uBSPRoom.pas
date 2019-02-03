@@ -12,6 +12,7 @@ type
   private
     Rect: TRect;
     Visited: Boolean;
+    function GetCentersOfLeafRooms: TArray<TPoint>;
   public
     Parent: TBSPRoom;
     Room1: TBSPRoom;
@@ -23,8 +24,6 @@ type
     function GetRects(): TArray<TRect>;
     function GetNextRoom(): TBSPRoom;
     procedure UnvisitAll;
-    function GetPointsOfLineBetweenSubrooms(): TArray<TPoint>;
-    function GetCentersOfLeafRooms(): TArray<TPoint>;
     function GetLeafRooms(): TArray<TBSPRoom>;
     function IsLeafRoom(): Boolean;
   end;
@@ -165,14 +164,6 @@ begin
   Room1.RandomDivide();
   Room2 := TBSPRoom.Create(Rect2, Self);
   Room2.RandomDivide();
-end;
-
-function TBSPRoom.GetPointsOfLineBetweenSubrooms(): TArray<TPoint>;
-begin
-  if (Room1 = nil) or (Room2 = nil) then
-    Exit();
-
-  Result := GetLinePoints(Room1.GetRect().CenterPoint, Room2.GetRect().CenterPoint);
 end;
 
 end.
